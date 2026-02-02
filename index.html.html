@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사내 교육 과정 수강신청</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Lucide 아이콘 대체 (간단한 SVG)
+        const Calendar = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const Users = () => (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        );
+
+        const Download = () => (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        );
+
+        const Settings = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m5.66-15.66l-4.24 4.24m0 6.36l4.24 4.24M23 12h-6m-6 0H1m15.66 5.66l-4.24-4.24m0-6.36l4.24-4.24"></path>
+            </svg>
+        );
+
+        const BookOpen = () => (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+        );
+
+        const CheckCircle = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        );
+
+        const CourseRegistrationSystem = () => {
+            const [view, setView] = useState('student');
+            const [adminPassword, setAdminPassword] = useState('');
+            const [isAdminAuth, setIsAdminAuth] = useState(false);
+            
+            const courses = [
+                { id: 1, name: '피드백 스킬 1차수', date: '2026-10-27', capacity: 30 },
+                { id: 2, name: '피드백 스킬 2차수', date: '2026-10-29', capacity: 30 },
+                { id: 3, name: '브릿지 리더십', date: '2026-10-30', capacity: 30 },
+                { id: 4, name: '동기부여 리더십', date: '2026-10-31', capacity: 30 }
+            ];
+
+            const [registrations, setRegistrations] = useState([]);
+            
+            const [formData, setFormData] = useState({
+                name: '',
+                department: '',
+                email: '',
+                courseId: ''
+            });
+
+            const [submitSuccess, setSubmitSuccess] = useState(false);
+
+            const getRegistrationCount = (courseId) => {
+                return registrations.filter(reg => reg.courseId === courseId).length;
+            };
+
+            const handleSubmit = () => {
+                if (!formData.name || !formData.department || !formData.email || !formData.courseId) {
+                    alert('모든 필수 항목을 입력해주세요.');
+                    return;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) {
+                    alert('올바른 이메일 형식을 입력해주세요.');
+                    return;
+                }
+                
+                const courseId = parseInt(formData.courseId);
+                const currentCount = getRegistrationCount(courseId);
+                
+                if (currentCount >= 30) {
+                    alert('죄송합니다. 해당 과정은 정원이 마감되었습니다.');
+                    return;
+                }
+
+                const newRegistration = {
+                    ...formData,
+                    courseId: courseId,
+                    courseName: courses.find(c => c.id === courseId)?.name,
+                    courseDate: courses.find(c => c.id === courseId)?.date,
+                    registeredAt: new Date().toISOString()
+                };
+
+                setRegistrations([...registrations, newRegistration]);
+                setSubmitSuccess(true);
+                
+                setFormData({
+                    name: '',
+                    department: '',
+                    email: '',
+                    courseId: ''
+                });
+
+                setTimeout(() => setSubmitSuccess(false), 3000);
+            };
+
+            const downloadExcel = () => {
+                const headers = ['이름', '소속', '이메일', '신청과정', '과정날짜', '신청일시'];
+                const rows = registrations.map(reg => [
+                    reg.name,
+                    reg.department,
+                    reg.email,
+                    reg.courseName,
+                    reg.courseDate,
+                    new Date(reg.registeredAt).toLocaleString('ko-KR')
+                ]);
+
+                let csvContent = '\uFEFF';
+                csvContent += headers.join(',') + '\n';
+                rows.forEach(row => {
+                    csvContent += row.join(',') + '\n';
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `수강신청현황_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+            };
+
+            const handleAdminLogin = () => {
+                if (adminPassword === 'admin123') {
+                    setIsAdminAuth(true);
+                } else {
+                    alert('비밀번호가 올바르지 않습니다.');
+                }
+            };
+
+            const renderCalendar = () => {
+                const october2026 = [];
+                const daysInMonth = 31;
+                const startDay = 3;
+
+                for (let i = 0; i < startDay; i++) {
+                    october2026.push(null);
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    october2026.push(day);
+                }
+
+                const getCourseForDate = (day) => {
+                    const dateStr = `2026-10-${day.toString().padStart(2, '0')}`;
+                    return courses.find(c => c.date === dateStr);
+                };
+
+                return (
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                            <Calendar />
+                            2026년 10월 과정 일정
+                        </h3>
+                        <div className="grid grid-cols-7 gap-1">
+                            {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+                                <div key={day} className="text-center font-semibold text-sm p-2 bg-gray-50">
+                                    {day}
+                                </div>
+                            ))}
+                            {october2026.map((day, idx) => {
+                                const course = day ? getCourseForDate(day) : null;
+                                const count = course ? getRegistrationCount(course.id) : 0;
+                                const isFull = count >= 30;
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`min-h-20 p-1 border border-gray-100 ${
+                                            day ? 'bg-white' : 'bg-gray-50'
+                                        } ${course ? 'bg-blue-50' : ''}`}
+                                    >
+                                        {day && (
+                                            <>
+                                                <div className="text-sm font-semibold mb-1">{day}</div>
+                                                {course && (
+                                                    <div className={`text-xs p-1 rounded ${isFull ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        <div className="font-medium truncate">{course.name}</div>
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <Users />
+                                                            <span>{count}/30</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderStudentView = () => (
+                <div className="max-w-6xl mx-auto p-6">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg mb-6">
+                        <h1 className="text-3xl font-bold flex items-center gap-3">
+                            <BookOpen />
+                            사내 교육 과정 수강신청
+                        </h1>
+                        <p className="mt-2 text-blue-100">원하시는 과정을 선택하고 신청해주세요</p>
+                    </div>
+
+                    {submitSuccess && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+                            <CheckCircle />
+                            <span>수강신청이 완료되었습니다!</span>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h2 className="text-xl font-semibold mb-4">수강신청서</h2>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            이름 <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            소속 <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.department}
+                                            onChange={(e) => setFormData({...formData, department: e.target.value})}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            이메일 <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            신청과정 <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="space-y-2">
+                                            {courses.map(course => {
+                                                const count = getRegistrationCount(course.id);
+                                                const isFull = count >= course.capacity;
+                                                
+                                                return (
+                                                    <label
+                                                        key={course.id}
+                                                        className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                                                            isFull 
+                                                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60' 
+                                                                : formData.courseId === course.id.toString()
+                                                                ? 'bg-blue-50 border-blue-500'
+                                                                : 'bg-white border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="radio"
+                                                                name="course"
+                                                                value={course.id}
+                                                                checked={formData.courseId === course.id.toString()}
+                                                                onChange={(e) => setFormData({...formData, courseId: e.target.value})}
+                                                                disabled={isFull}
+                                                                className="w-4 h-4"
+                                                            />
+                                                            <div>
+                                                                <div className="font-medium">{course.name}</div>
+                                                                <div className="text-sm text-gray-600">{course.date}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                                                            isFull 
+                                                                ? 'bg-red-100 text-red-700' 
+                                                                : count >= 25 
+                                                                ? 'bg-orange-100 text-orange-700'
+                                                                : 'bg-green-100 text-green-700'
+                                                        }`}>
+                                                            <Users />
+                                                            <span>{count}/{course.capacity}</span>
+                                                            {isFull && <span className="ml-1">(마감)</span>}
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleSubmit}
+                                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                    >
+                                        수강신청하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-1">
+                            {renderCalendar()}
+                            
+                            <div className="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <h3 className="font-semibold mb-2">신청 현황</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-green-100 rounded"></div>
+                                        <span>여유 (0-24명)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-orange-100 rounded"></div>
+                                        <span>마감임박 (25-29명)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-red-100 rounded"></div>
+                                        <span>마감 (30명)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={() => setView('admin')}
+                            className="text-gray-600 text-sm hover:text-gray-800 inline-flex items-center gap-1"
+                        >
+                            <Settings />
+                            관리자 페이지
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderAdminView = () => {
+                if (!isAdminAuth) {
+                    return (
+                        <div className="max-w-md mx-auto p-6 mt-20">
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                                    <Settings />
+                                    관리자 로그인
+                                </h2>
+                                <input
+                                    type="password"
+                                    placeholder="비밀번호 입력"
+                                    value={adminPassword}
+                                    onChange={(e) => setAdminPassword(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
+                                />
+                                <button
+                                    onClick={handleAdminLogin}
+                                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                                >
+                                    로그인
+                                </button>
+                                <p className="text-xs text-gray-500 mt-2">기본 비밀번호: admin123</p>
+                                <button
+                                    onClick={() => setView('student')}
+                                    className="w-full mt-3 text-gray-600 text-sm hover:text-gray-800"
+                                >
+                                    ← 학습자 페이지로 돌아가기
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="max-w-7xl mx-auto p-6">
+                        <div className="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-6 rounded-lg mb-6">
+                            <h1 className="text-3xl font-bold flex items-center gap-3">
+                                <Settings />
+                                관리자 페이지
+                            </h1>
+                            <p className="mt-2 text-gray-300">수강신청 현황 및 관리</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-white p-4 rounded-lg shadow-md">
+                                <div className="text-gray-600 text-sm">전체 신청자</div>
+                                <div className="text-3xl font-bold text-blue-600">{registrations.length}명</div>
+                            </div>
+                            {courses.map(course => {
+                                const count = getRegistrationCount(course.id);
+                                return (
+                                    <div key={course.id} className="bg-white p-4 rounded-lg shadow-md">
+                                        <div className="text-gray-600 text-sm truncate">{course.name}</div>
+                                        <div className="text-3xl font-bold text-green-600">{count}/30명</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between items-center">
+                            <h2 className="text-xl font-semibold">신청자 목록</h2>
+                            <button
+                                onClick={downloadExcel}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 flex items-center gap-2"
+                            >
+                                <Download />
+                                Excel 다운로드
+                            </button>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">이름</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">소속</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">이메일</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">신청과정</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">과정날짜</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">신청일시</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {registrations.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                                                    아직 신청자가 없습니다.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            registrations.map((reg, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm">{reg.name}</td>
+                                                    <td className="px-4 py-3 text-sm">{reg.department}</td>
+                                                    <td className="px-4 py-3 text-sm">{reg.email}</td>
+                                                    <td className="px-4 py-3 text-sm">{reg.courseName}</td>
+                                                    <td className="px-4 py-3 text-sm">{reg.courseDate}</td>
+                                                    <td className="px-4 py-3 text-sm">
+                                                        {new Date(reg.registeredAt).toLocaleString('ko-KR')}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 text-center">
+                            <button
+                                onClick={() => {
+                                    setView('student');
+                                    setIsAdminAuth(false);
+                                    setAdminPassword('');
+                                }}
+                                className="text-gray-600 text-sm hover:text-gray-800"
+                            >
+                                ← 학습자 페이지로 돌아가기
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    {view === 'student' ? renderStudentView() : renderAdminView()}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<CourseRegistrationSystem />, document.getElementById('root'));
+    </script>
+</body>
+</html>
