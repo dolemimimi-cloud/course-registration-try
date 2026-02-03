@@ -80,7 +80,6 @@
             const [loading, setLoading] = useState(false);
             const [registrations, setRegistrations] = useState([]);
             
-            // 페이지 로드 시 데이터 가져오기
             React.useEffect(() => {
                 loadData();
                 const interval = setInterval(loadData, 10000);
@@ -132,28 +131,59 @@
                     return;
                 }
 
-                // 중복 신청 체크 (이름 + 이메일)
-                const isDuplicate = registrations.some(reg => 
-                    reg.name === formData.name && 
-                    reg.email === formData.email
-                );
+                setLoading(true);
 
-                if (isDuplicate) {
-                    alert('이미 수강신청을 완료하셨습니다.\n과정 변경이 필요하시면 Learning&Value 팀으로 문의해주세요.');
+                // 최신 데이터를 가져와서 체크
+                const canProceed = await new Promise((resolve) => {
+                    const callbackName = 'checkCallback' + Date.now();
+                    const script = document.createElement('script');
+                    
+                    window[callbackName] = (data) => {
+                        if (data.registrations) {
+                            // 중복 체크 (이름 + 이메일)
+                            const isDuplicate = data.registrations.some(reg => 
+                                reg.name === formData.name && 
+                                reg.email === formData.email
+                            );
+
+                            if (isDuplicate) {
+                                alert('이미 수강신청을 완료하셨습니다.\n과정 변경이 필요하시면 Learning&Value 팀으로 문의해주세요.');
+                                document.body.removeChild(script);
+                                delete window[callbackName];
+                                resolve(false);
+                                return;
+                            }
+
+                            // 정원 체크
+                            const course = courses.find(c => c.id === parseInt(formData.courseId));
+                            const currentCount = data.registrations.filter(reg => reg.course === course.name).length;
+                            
+                            if (currentCount >= course.capacity) {
+                                alert('죄송합니다. 해당 과정은 정원이 마감되었습니다.');
+                                document.body.removeChild(script);
+                                delete window[callbackName];
+                                resolve(false);
+                                return;
+                            }
+
+                            document.body.removeChild(script);
+                            delete window[callbackName];
+                            resolve(true);
+                        }
+                    };
+                    
+                    script.src = `${GOOGLE_SCRIPT_URL}?callback=${callbackName}`;
+                    document.body.appendChild(script);
+                });
+
+                if (!canProceed) {
+                    setLoading(false);
                     return;
                 }
 
                 const course = courses.find(c => c.id === parseInt(formData.courseId));
-                const currentCount = getRegistrationCount(course.id);
-                
-                if (currentCount >= course.capacity) {
-                    alert('죄송합니다. 해당 과정은 정원이 마감되었습니다.');
-                    return;
-                }
 
                 try {
-                    setLoading(true);
-
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors',
