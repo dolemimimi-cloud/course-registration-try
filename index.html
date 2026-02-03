@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사내 교육 과정 수강신청</title>
+    <title>MDC 선택과정 수강신청</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -97,7 +97,9 @@
 
             const loadRegistrationsFromSheet = async () => {
                 try {
-                    const response = await fetch(GOOGLE_SCRIPT_URL);
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        redirect: 'follow'
+                    });
                     const data = await response.json();
                     
                     if (data.registrations) {
