@@ -88,38 +88,6 @@
 
             const [registrations, setRegistrations] = useState([]);
             const [loading, setLoading] = useState(false);
-            const [initialLoading, setInitialLoading] = useState(true);
-
-            // 페이지 로드 시 Google Sheets에서 데이터 가져오기
-            React.useEffect(() => {
-                loadRegistrationsFromSheet();
-            }, []);
-
-            const loadRegistrationsFromSheet = async () => {
-                try {
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        redirect: 'follow'
-                    });
-                    const data = await response.json();
-                    
-                    if (data.registrations) {
-                        const formattedData = data.registrations.map(reg => ({
-                            name: reg.name,
-                            department: reg.department,
-                            email: reg.email,
-                            courseName: reg.course,
-                            courseDate: reg.date,
-                            courseId: courses.find(c => c.name === reg.course)?.id,
-                            registeredAt: new Date().toISOString()
-                        }));
-                        setRegistrations(formattedData);
-                    }
-                } catch (error) {
-                    console.error('데이터 로드 실패:', error);
-                } finally {
-                    setInitialLoading(false);
-                }
-            };
             
             const [formData, setFormData] = useState({
                 name: '',
@@ -364,14 +332,6 @@
 
             const renderStudentView = () => (
                 <div className="max-w-6xl mx-auto p-6">
-                    {initialLoading ? (
-                        <div className="flex items-center justify-center min-h-screen">
-                            <div className="text-center">
-                                <div className="text-xl text-gray-600">데이터를 불러오는 중...</div>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
                     <div className="bg-gradient-to-r from-slate-700 to-slate-800 text-white p-6 rounded-lg mb-6">
                         <h1 className="text-3xl font-bold flex items-center gap-3">
                             <BookOpen />
@@ -544,8 +504,6 @@
                             관리자 페이지
                         </button>
                     </div>
-                        </>
-                    )}
                 </div>
             );
 
