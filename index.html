@@ -132,6 +132,17 @@
                     return;
                 }
 
+                // 중복 신청 체크 (이름 + 이메일)
+                const isDuplicate = registrations.some(reg => 
+                    reg.name === formData.name && 
+                    reg.email === formData.email
+                );
+
+                if (isDuplicate) {
+                    alert('이미 수강신청을 완료하셨습니다.\n과정 변경이 필요하시면 Learning&Value 팀으로 문의해주세요.');
+                    return;
+                }
+
                 const course = courses.find(c => c.id === parseInt(formData.courseId));
                 const currentCount = getRegistrationCount(course.id);
                 
